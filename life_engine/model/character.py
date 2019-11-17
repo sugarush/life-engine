@@ -19,11 +19,6 @@ class Level(Model):
     next = Field(type=int)
 
 
-class Health(Model):
-    current = Field(type=int, required=True)
-    max = Field(type=int, required=True)
-
-
 class State(Model):
     target = Field()
     hostile = Field(type=bool)
@@ -45,10 +40,10 @@ class Character(MongoDBModel):
     equipment = Field(type=Equipment)
     inventory = Field(type=[ Item ])
     state = Field(type=State, required=True)
-    health = Field(type=Health, required=True)
+    health = Field(type=int, required=True)
     level = Field(type=Level, required=True)
 
-    async def modifiers(self):
+    async def stats(self):
         profession = await Profession.find_one({
             'title': self.profession
         })
@@ -72,8 +67,11 @@ class Character(MongoDBModel):
                     if item.armor:
                         armor += item.armor
 
+        health = attributes['constitution'] * 10
+
         return {
             'armor': armor,
+            'health': health,
             'attributes': dict(attributes),
             'resistances': dict(resistances)
         }
@@ -101,15 +99,16 @@ class Character(MongoDBModel):
         await self.save()
 
     async def attack(self):
-        modifiers = await self.modifiers()
+        stats = await self.stats()
         other = await Character.find_by_id(self.state.target)
-        await other.damage(5 * (modifiers['attributes']['strength'] / 10))
+        await other.damage(5 * (stats['attributes']['strength'] / 10))
 
     async def damage(self, damage=0):
         other = await Character.find_by_id(self.state.target)
-        self.health.current -= damage
-        if self.health.current <= 0:
+        self.health -= damage
+        if self.health <= 0:
             self.state.dead = time()
+            self.state.target = None
             await other.killing_blow(self)
         await self.save()
 

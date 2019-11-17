@@ -50,7 +50,8 @@ class LifeEngine(object):
                         await this.delete()
                 return
             else:
-                if this.health.current < this.health.max:
+                stats = await this.stats()
+                if this.health < stats['health']:
                     await this.damage(-1)
 
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)

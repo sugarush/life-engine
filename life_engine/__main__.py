@@ -26,10 +26,7 @@ class Engine(LifeEngine):
                     'current': 1,
                     'experience': 500
                 },
-                'health': {
-                    'current': 100,
-                    'max': 100
-                },
+                'health': 100,
                 'attributes': {
                     'strength': 10,
                     'dexterity': 5,
@@ -64,10 +61,7 @@ class Engine(LifeEngine):
                 'experience': 50000,
                 'next': 75000
             },
-            'health': {
-                'current': 500,
-                'max': 500
-            },
+            'health': 500,
             'attributes': {
                 'strength': 50,
                 'dexterity': 50,
@@ -97,8 +91,6 @@ class Engine(LifeEngine):
 
         await samael.save()
         await samael.set_location(42.4091595, -84.5396023)
-
-        print(await samael.modifiers())
 
     @classmethod
     async def teardown(cls):
