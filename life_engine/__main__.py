@@ -23,7 +23,7 @@ if args.command == 'api':
     from api import server
 
     print(f'{Fore.GREEN}Starting Life API Server...{Style.RESET_ALL}')
-    server.run(host='127.0.0.1', port='8000')
+    server.run(host='127.0.0.1', port='8001')
     print(f'{Fore.GREEN}Stopping Life API Server...{Style.RESET_ALL}')
 elif args.command == 'engine':
     from sanic.websocket import WebSocketProtocol
@@ -32,7 +32,7 @@ elif args.command == 'engine':
     from engine import LifeEngine as LE
 
     print(f'{Fore.GREEN}Starting Life Engine...{Style.RESET_ALL}')
-    LE.server.run(protocol=WebSocketProtocol)
+    LE.server.run(host='127.0.0.1', port='8000', protocol=WebSocketProtocol)
     print(f'{Fore.GREEN}Stopping Life Engine...{Style.RESET_ALL}')
 else:
     parser.print_help()

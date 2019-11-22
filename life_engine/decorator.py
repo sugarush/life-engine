@@ -8,4 +8,4 @@ def character_event(handler):
         if character and socket is character.socket:
             await handler(character, event)
         else:
-            await socket.json({ 'type': 'invalid-character-event' })
+            await socket.send_json({ 'type': 'invalid-character-event' })

@@ -120,6 +120,7 @@ class LifeEngine(object):
     @character_event
     async def login(cls, event, character):
         await character.set_shard(cls.shard)
+        await character.player_update_stats()
         await cls.set_character_location(event, character)
 
     @classmethod
@@ -127,7 +128,7 @@ class LifeEngine(object):
     async def logout(cls, event, character):
         await character.remove_location()
         await character.socket.send_json({
-            'type': 'confirm-logout',
+            'type': 'logout-confirm',
             'data': {
                 'message': 'Successfully logged out.'
             }
@@ -138,7 +139,7 @@ class LifeEngine(object):
     async def set_character_location(cls, event, character):
         await character.set_location(event.data.longitude, event.data.latitude)
         await character.socket.send_json({
-            'type': 'update-player-location',
+            'type': 'set-character-location',
             'data': {
                 'longitude': events.data.longitude,
                 'latitude': events.data.latitude

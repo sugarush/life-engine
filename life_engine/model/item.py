@@ -12,3 +12,4 @@ class Item(Model):
     attributes = Field(type=Attributes)
     resistances = Field(type=Resistances)
     armor = Field(type=int)
+    count = Field(type=int)

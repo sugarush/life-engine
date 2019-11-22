@@ -43,6 +43,7 @@ class Character(MongoDBModel, JSONAPIMixin):
     health = Field(type=int, required=True)
     level = Field(type=Level, required=True)
 
+    @property
     async def stats(self):
         profession = await Profession.find_one({
             'title': self.profession
@@ -93,15 +94,21 @@ class Character(MongoDBModel, JSONAPIMixin):
 
     async def location(self):
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
-        coordinates = await redis.geopos('location', self.id)
+        coordinates = await redis.geopos(self.shard, self.id)
 
     async def set_location(self, longitude, latitude):
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
-        await redis.geoadd('location', longitude, latitude, self.id)
+        await redis.geoadd(self.shard, longitude, latitude, self.id)
 
     async def remove_location(self):
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
-        await redis.zrem('location', self.id)
+        await redis.zrem(self.shard, self.id)
+
+    async def player_update_stats(self):
+        await self.socket.send_json({
+            'type': 'player-update-stats',
+            'data': await self.stats
+        })
 
     async def target(self, other):
         self.state.target = other.id
@@ -114,9 +121,8 @@ class Character(MongoDBModel, JSONAPIMixin):
         await self.save()
 
     async def attack(self):
-        stats = await self.stats()
         other = await Character.find_by_id(self.state.target)
-        other.health -= 5 * (stats['attributes']['strength'] / 10)
+        other.health -= 5 * ((await self.stats)['attributes']['strength'] / 10)
         if other.health <= 0:
             other.state.dead = time()
             other.state.target = None

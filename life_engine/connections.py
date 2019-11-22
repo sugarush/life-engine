@@ -67,7 +67,8 @@ class Connections(object):
             await cls.handlers[event.type](event)
 
     # XXX: This could be done better.
-    # XXX: We're only closing one client connection at a time this way.
+    # XXX: We're only closing one client connection at a time this way
+    # XXX: because of the for loop.
     @classmethod
     async def close(cls):
         for id, task in cls.tasks:
