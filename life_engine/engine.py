@@ -1,7 +1,8 @@
 from asyncio import run, sleep, create_task, CancelledError
 from time import time
 from uuid import uuid4
-from logging import Logger
+from logging import getLogger, basicConfig, INFO
+basicConfig(format='%(asctime)-15s %(name)s %(message)s')
 
 from sanic import Sanic
 from colorama import Style, Fore, Back
@@ -15,29 +16,30 @@ from connections import Connections
 from world.cache import WorldCache
 
 
+
 class LifeEngine(object):
 
-    server = Sanic('life-engine')
+    server = Sanic('life.engine')
     shard = str(uuid4())
     iterator = None
-    output = Logger('life-engine')
+    output = getLogger('life.engine')
 
     time = time()
     tick_radius = 50
     tick_units = 'm'
-    tick_timeout = 5
-    iterate_timeout = 0.0001
-    corpse_timeout = 300
+    tick_timeout = 60
+    respawn = 600
 
     @server.listener('before_server_start')
     async def setup(app, loop):
+        LifeEngine.output.setLevel(INFO)
         MongoDB.set_event_loop(loop)
         await Redis.set_event_loop(loop)
         WorldCache.set_shard(LifeEngine.shard)
         LifeEngine.LifeEngine_run = create_task(LifeEngine.run())
-        print(f'{Fore.GREEN}Started Life Engine iterator.{Style.RESET_ALL}')
+        LifeEngine.output.info(f'{Fore.GREEN}Started Life Engine iterator.{Style.RESET_ALL}')
         LifeEngine.WorldCache_init = create_task(WorldCache.init())
-        print(f'{Fore.GREEN}Started Life Engine world cache.{Style.RESET_ALL}')
+        LifeEngine.output.info(f'{Fore.GREEN}Started Life Engine world cache.{Style.RESET_ALL}')
 
     @server.listener('before_server_stop')
     async def teardown(app, loop):
@@ -45,7 +47,7 @@ class LifeEngine(object):
         try:
             await LifeEngine.LifeEngine_run
         except CancelledError:
-            print(f'{Fore.GREEN}Stopped Life Engine iterator.{Style.RESET_ALL}')
+            LifeEngine.output.info(f'{Fore.GREEN}Stopped Life Engine iterator.{Style.RESET_ALL}')
         LifeEngine.WorldCache_init.cancel()
         try:
             await LifeEngine.WorldCache_init
@@ -71,20 +73,18 @@ class LifeEngine(object):
             shard = split[0]
             key = split[1]
             await cls.tick(key)
-            await sleep(cls.iterate_timeout)
         end = time()
         if (end - start) > cls.tick_timeout:
-            cls.output.error(f'{Fore.RED}Server is lagging due to too many users or maladjusted iterate_timeout.{Style.RESET_ALL}')
+            cls.output.error(f'{Fore.RED}Server is lagging due to too many users.{Style.RESET_ALL}')
+            cls.output.error(f'{Fore.RED}Currently experiencing a time dilation of: {(end - start)}s.{Style.RESET_ALL}')
 
     @classmethod
     async def tick(cls, key):
         this = await Character.find_by_id(key.decode())
 
-
         if this:
-            await this.touch()
             if this.state.dead:
-                if time() - this.state.dead > cls.corpse_timeout:
+                if time() - this.state.dead > cls.respawn:
                     if not this.email:
                         await this.revive()
                 return
