@@ -20,7 +20,6 @@ from . level import Level
 class Character(MongoDBModel, JSONAPIMixin):
 
     __set__ = {
-        'shard': [ ],
         'profile': [ ],
         'name': [ ],
         'title': [ ],
@@ -34,12 +33,11 @@ class Character(MongoDBModel, JSONAPIMixin):
         'level': [ ]
     }
 
-    shard = Field()
     profile = Field()
     name = Field(type=Name, required=True)
     title = Field()
     profession = Field(type=Profession, required=True)
-    attributes = Field(type=Attributes, required=True)
+    attributes = Field(type=Attributes)
     resistances = Field(type=Resistances)
     equipment = Field(type=Equipment)
     inventory = Field(type=[ Item ])

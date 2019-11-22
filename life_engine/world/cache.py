@@ -3,19 +3,24 @@ import os
 from yaml import load
 from yaml import Loader
 
-from model.character import Character
+from model.monster import Monster
 
 
 class WorldCache(object):
 
     directory = os.path.dirname(__file__)
 
+    shard = None
     country = None
     state = None
     county = None
 
     monsters = { }
     professions = { }
+
+    @classmethod
+    def set_shard(cls, name):
+        cls.shard = name
 
     @classmethod
     def configure(cls, args):
@@ -42,3 +47,7 @@ class WorldCache(object):
             base = name.split('.')[0]
             file = open(os.path.join(monsters_directory, name))
             cls.monsters[base] = load(file, Loader=Loader)
+            for m in cls.monsters[base]:
+                monster = Monster(m['monster'])
+                monster.shard = cls.shard
+                await monster.save()

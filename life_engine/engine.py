@@ -1,6 +1,7 @@
 from asyncio import run, sleep, create_task, CancelledError
 from time import time
 from uuid import uuid4
+from logging import Logger
 
 from sanic import Sanic
 from colorama import Style, Fore, Back
@@ -19,17 +20,20 @@ class LifeEngine(object):
     server = Sanic('life-engine')
     shard = str(uuid4())
     iterator = None
+    output = Logger('life-engine')
 
     time = time()
     tick_radius = 50
     tick_units = 'm'
     tick_timeout = 5
+    iterate_timeout = 0.1
     corpse_timeout = 300
 
     @server.listener('before_server_start')
     async def setup(app, loop):
         MongoDB.set_event_loop(loop)
         await Redis.set_event_loop(loop)
+        WorldCache.set_shard(LifeEngine.shard)
         LifeEngine.LifeEngine_run = create_task(LifeEngine.run())
         print(f'{Fore.GREEN}Started Life Engine iterator.{Style.RESET_ALL}')
         LifeEngine.WorldCache_init = create_task(WorldCache.init())
@@ -60,11 +64,16 @@ class LifeEngine(object):
     @classmethod
     async def iterate(cls):
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
+        start = time()
         async for key, _ in redis.izscan('position', match=f'{cls.shard}:*'):
             split = key.split(':')
             shard = split[0]
             key = split[1]
             await cls.tick(key)
+            await sleep(cls.iterate_timeout)
+        end = time()
+        if (end - start) > cls.tick_timeout:
+            cls.output.error(f'{Fore.RED}Server is lagging.{Style.RESET_ALL}')
 
     @classmethod
     async def tick(cls, key):

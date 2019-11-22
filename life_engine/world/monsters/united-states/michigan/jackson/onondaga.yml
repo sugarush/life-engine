@@ -1,0 +1,19 @@
+---
+
+  - type: single
+    monster:
+      location:
+        type: Point
+        coordinates: [ 42.8134055, -84.7837708 ]
+      name:
+        first: An Ogre
+      title: A Brute
+      profession:
+        title: wizard
+      state:
+        hostile: true
+      health: 1000
+      expire: 3600
+      level:
+        current: 1
+        experience: 500
