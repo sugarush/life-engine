@@ -28,6 +28,7 @@ class LifeEngine(object):
     @server.listener('before_server_start')
     async def setup(app, loop):
         LifeEngine.iterator = create_task(LifeEngine.run())
+        print(f'{Fore.GREEN}Started Life Engine iterator.{Style.RESET_ALL}')
         MongoDB.set_event_loop(loop)
         await Redis.set_event_loop(loop)
 

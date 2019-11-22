@@ -87,13 +87,14 @@ class WebToken {
     }
   }
 
-  async refresh(uri) {
+  async refresh(uri, data) {
     if(!uri) {
       throw Error('WebToken.refresh called with a uri.');
     }
 
     let json = await jsonapi(uri, {
-      method: 'PATCH'
+      method: 'PATCH',
+      body: data
     });
 
     if(json.errors) {

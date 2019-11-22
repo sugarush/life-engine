@@ -12,10 +12,10 @@ class Authentication(WebToken):
 
     @classmethod
     async def create(cls, attributes):
-        email = attributes.get('username')
+        username = attributes.get('username')
 
-        if not email:
-            raise Exception('No email provided.')
+        if not username:
+            raise Exception('No username provided.')
 
         password = attributes.get('password')
 
@@ -25,7 +25,7 @@ class Authentication(WebToken):
         digest = f'hashed-{hashlib.sha256(password.encode()).hexdigest()}'
 
         profile = await Profile.find_one({
-            'email': email,
+            'username': username,
             'password': digest
         })
 

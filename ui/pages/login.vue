@@ -18,7 +18,7 @@
 </template>
 
 <script>
-import { API_URI } from "~/settings.js";
+import { API_HOST } from "~/settings.js";
 import WebToken from "~/vendor/sugar-data/lib/webtoken.js";
 
 export default {
@@ -31,7 +31,7 @@ export default {
   },
   methods: {
     async login() {
-      await WebToken.authenticate(`${API_URI}/v1/authentication`, {
+      await WebToken.authenticate(`${API_HOST}/v1/authentication`, {
         'data': {
           'attributes': {
             'username': this.username,

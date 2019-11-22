@@ -11,7 +11,7 @@
 </template>
 
 <script>
-import { API_URI } from "~/settings.js";
+import { API_HOST } from "~/settings.js";
 import WebToken from "~/vendor/sugar-data/lib/webtoken.js";
 import { Collection } from "~/vendor/sugar-data/lib/collection.js";
 
@@ -21,7 +21,7 @@ export default {
   data() {
     return {
       characters: new Collection({
-        host: API_URI,
+        host: API_HOST,
         uri: "v1",
         type: "characters"
       })

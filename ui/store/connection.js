@@ -1,4 +1,4 @@
-import { ENGINE_URI } from "~/settings.js";
+import { ENGINE_HOST } from "~/settings.js";
 import WebToken from "~/vendor/sugar-data/lib/webtoken.js";
 
 export const state = () => ({
@@ -6,18 +6,14 @@ export const state = () => ({
 })
 
 export const mutations = {
-  enter() {
-    state.socket = new WebSocket(`${ENGINE_URI}/v1/play`);
-
-    state.socket.onopen = (event) => {
-
-    }
+  connect(state) {
+    state.socket = new WebSocket(`${ENGINE_HOST}/v1/play`);
 
     state.socket.onmessage = (event) => {
       const json = JSON.parse(event.data);
       switch(json.type) {
         case 'authorization-request':
-          socket.send(JSON.stringify({
+          state.socket.send(JSON.stringify({
             type: 'authorization-response',
             data: {
               token: WebToken.token,
