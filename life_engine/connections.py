@@ -1,5 +1,6 @@
 from asyncio import create_task, CancelledError
-from ujson import dumps
+
+from ujson import loads, dumps
 from sanic.websocket import WebSocketConnection
 
 
@@ -9,10 +10,13 @@ class LifeSocket(WebSocketConnection):
         self._send = websocket._send
         self._receive = websocket.receive
 
-    async def json(self, data):
+    async def send_json(self, data):
         await self.send(dumps(data))
 
-    async def recv(self, *args, **kwargs) -> Optional[str]:
+    async def recv_json(self):
+        return Document(loads(await self.recv()))
+
+    async def recv(self, *args, **kwargs):
         message = await self._receive()
 
         if message["type"] == "websocket.receive":
@@ -51,7 +55,7 @@ class Connections(object):
 
         async def watch(socket):
             while True:
-                event = Document(await socket.recv())
+                event = await socket.recv_json()
                 if event.character.id:
                     cls.process_client_event(socket, event)
 
@@ -62,6 +66,8 @@ class Connections(object):
         if event.type in cls.handlers:
             await cls.handlers[event.type](event)
 
+    # XXX: This could be done better.
+    # XXX: We're only closing one client connection at a time this way.
     @classmethod
     async def close(cls):
         for id, task in cls.tasks:

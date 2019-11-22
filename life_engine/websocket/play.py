@@ -1,4 +1,5 @@
 import jwt
+from ujson import loads, dumps
 
 from sugar_document import Document
 
@@ -8,11 +9,11 @@ from connections import Connections
 
 @LE.server.websocket('/v1/play')
 async def v1_play(request, socket):
-    socket.send({
+    socket.send(dumps({
         'type': 'authorization-request'
-    })
+    }))
 
-    response = Document(await socket.recv())
+    response = Document(loads(await socket.recv()))
 
     if not response.event.type == 'authorization-response':
         await socket.close()
@@ -31,7 +32,7 @@ async def v1_play(request, socket):
 
     socket.disconnect = LE.disconnect
     Connections.on('reconnect', LE.reconnect)
-
     Connections.on('login', LE.login)
-    Connections.on('set-player-location', LE.set_player_location)
     Connections.on('logout', LE.logout)
+
+    Connections.on('set-player-location', LE.set_player_location)

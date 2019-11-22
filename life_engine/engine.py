@@ -8,8 +8,9 @@ from colorama import Style, Fore, Back
 from sugar_odm import MongoDB
 from sugar_api import Redis
 
-from decorator import character_event
 from model.character import Character
+from decorator import character_event
+from connections import Connections
 
 
 class LifeEngine(object):
@@ -105,6 +106,17 @@ class LifeEngine(object):
                 await this.attack()
 
     @classmethod
+    async def disconnect(cls, socket):
+        character = await \
+            Character.find_by_id(Connections.character_id_by_socket(socket))
+        await character.remove_location()
+
+    @classmethod
+    @character_event
+    async def reconnect(cls, event, character):
+        await character.set_location(event.data.longitude, event.data.latitude)
+
+    @classmethod
     @character_event
     async def login(cls, event, character):
         await character.set_shard(cls.shard)
@@ -112,21 +124,9 @@ class LifeEngine(object):
 
     @classmethod
     @character_event
-    async def set_character_location(cls, event, character):
-        await character.set_location(event.data.longitude, event.data.latitude)
-        await character.socket.send({
-            'type': 'update-player-location',
-            'data': {
-                'longitude': events.data.longitude,
-                'latitude': events.data.latitude
-            }
-        })
-
-    @classmethod
-    @character_event
     async def logout(cls, event, character):
         await character.remove_location()
-        await character.socket.send({
+        await character.socket.send_json({
             'type': 'confirm-logout',
             'data': {
                 'message': 'Successfully logged out.'
@@ -134,10 +134,13 @@ class LifeEngine(object):
         })
 
     @classmethod
-    async def disconnect(cls, socket):
-        pass
-
-    @classmethod
     @character_event
-    async def reconnect(cls, event, character):
-        pass
+    async def set_character_location(cls, event, character):
+        await character.set_location(event.data.longitude, event.data.latitude)
+        await character.socket.send_json({
+            'type': 'update-player-location',
+            'data': {
+                'longitude': events.data.longitude,
+                'latitude': events.data.latitude
+            }
+        })
