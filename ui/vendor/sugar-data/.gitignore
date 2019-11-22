@@ -1,7 +1,0 @@
-.DS_Store
-.sass-cache
-__pycache__
-bower_components
-node_modules
-mongodb_data
-venv
