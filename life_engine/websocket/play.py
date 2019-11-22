@@ -9,7 +9,7 @@ from connections import Connections
 
 @LE.server.websocket('/v1/play')
 async def v1_play(request, socket):
-    socket.send(dumps({
+    await socket.send(dumps({
         'type': 'authorization-request'
     }))
 
@@ -35,4 +35,5 @@ async def v1_play(request, socket):
     Connections.on('login', LE.login)
     Connections.on('logout', LE.logout)
 
-    Connections.on('set-player-location', LE.set_player_location)
+    Connections.on('player-set-location', LE.player_location)
+    Connections.on('player-request-stats', LE.player_request_stats)

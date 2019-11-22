@@ -46,13 +46,13 @@ class LifeEngine(object):
     async def run(cls):
         while True:
             cls.time = time()
-            await cls.iterate(cls.shard)
+            await cls.iterate()
             await sleep(cls.tick_timeout)
 
     @classmethod
-    async def iterate(cls, table):
+    async def iterate(cls):
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
-        async for key, _ in redis.izscan(table):
+        async for key, _ in redis.izscan('position', match=f'{cls.shard}:*'):
             await cls.tick(key)
 
     @classmethod
@@ -72,7 +72,7 @@ class LifeEngine(object):
                     await this.save()
 
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
-        result = await redis.georadiusbymember('location', key, cls.tick_radius, unit=cls.tick_units)
+        result = await redis.georadiusbymember('position', key, cls.tick_radius, unit=cls.tick_units)
 
         for _key in result:
 
@@ -128,7 +128,7 @@ class LifeEngine(object):
     async def logout(cls, event, character):
         await character.remove_location()
         await character.socket.send_json({
-            'type': 'logout-confirm',
+            'type': 'logout',
             'data': {
                 'message': 'Successfully logged out.'
             }
@@ -136,12 +136,20 @@ class LifeEngine(object):
 
     @classmethod
     @character_event
-    async def set_character_location(cls, event, character):
+    async def player_set_location(cls, event, character):
         await character.set_location(event.data.longitude, event.data.latitude)
         await character.socket.send_json({
-            'type': 'set-character-location',
+            'type': 'player-update-location',
             'data': {
                 'longitude': events.data.longitude,
                 'latitude': events.data.latitude
             }
+        })
+
+    @classmethod
+    @character_event
+    async def player_request_stats(cls, event, character):
+        await character.socket.send_json({
+            'type': 'player-update-stats',
+            'data': await character.stats
         })

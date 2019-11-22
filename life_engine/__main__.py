@@ -15,6 +15,10 @@ if len(sys.argv) == 1:
 
 args = parser.parse_args()
 
+from sugar_api import WebToken
+
+WebToken.set_secret('secret')
+
 
 if args.command == 'api':
     import resource

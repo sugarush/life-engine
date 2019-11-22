@@ -32,7 +32,7 @@ class Character(MongoDBModel, JSONAPIMixin):
     }
 
     shard = Field()
-    email = Field()
+    profile = Field()
     name = Field(type=Name, required=True)
     profession = Field(required=True)
     attributes = Field(type=Attributes, required=True)
@@ -88,27 +88,25 @@ class Character(MongoDBModel, JSONAPIMixin):
     def connected(self):
         return not self.shard is None
 
+    @property
+    def client_id(self):
+        return f'{self.shard}:{self.id}'
+
     async def set_shard(self, name):
         self.shard = name
         await self.save()
 
     async def location(self):
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
-        coordinates = await redis.geopos(self.shard, self.id)
+        coordinates = await redis.geopos('position', self.client_id)
 
     async def set_location(self, longitude, latitude):
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
-        await redis.geoadd(self.shard, longitude, latitude, self.id)
+        await redis.geoadd('position', longitude, latitude, self.client_id)
 
     async def remove_location(self):
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
-        await redis.zrem(self.shard, self.id)
-
-    async def player_update_stats(self):
-        await self.socket.send_json({
-            'type': 'player-update-stats',
-            'data': await self.stats
-        })
+        await redis.zrem('position', self.client_id)
 
     async def target(self, other):
         self.state.target = other.id
