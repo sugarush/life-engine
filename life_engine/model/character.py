@@ -79,9 +79,13 @@ class Character(MongoDBModel, JSONAPIMixin):
 
     @property
     def socket(self):
-        if self.email:
+        if self.connected:
             return Connections.socket_by_character_id(self.id)
         return None
+
+    @property
+    def connected(self):
+        return not self.shard is None
 
     async def set_shard(self, name):
         self.shard = name

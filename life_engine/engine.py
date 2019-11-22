@@ -107,7 +107,8 @@ class LifeEngine(object):
     @classmethod
     @character_event
     async def login(cls, event, character):
-        cls.set_character_location(event, character)
+        await character.set_shard(cls.shard)
+        await cls.set_character_location(event, character)
 
     @classmethod
     @character_event
@@ -131,3 +132,12 @@ class LifeEngine(object):
                 'message': 'Successfully logged out.'
             }
         })
+
+    @classmethod
+    async def disconnect(cls, socket):
+        pass
+
+    @classmethod
+    @character_event
+    async def reconnect(cls, event, character):
+        pass

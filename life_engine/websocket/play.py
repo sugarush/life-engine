@@ -25,7 +25,13 @@ async def v1_play(request, socket):
 
     token = Document(jwt.decode(response.data.token, secret=LE.secret))
 
-    Connections.set_socket_by_character_id(socket, token.character_id)
+    Connections.set_socket_by_character_id(socket, token.data.character.id)
+
+    socket = Connections.socket_by_character_id(token.data.character.id)
+
+    socket.disconnect = LE.disconnect
+    Connections.on('reconnect', LE.reconnect)
+
     Connections.on('login', LE.login)
     Connections.on('set-player-location', LE.set_player_location)
     Connections.on('logout', LE.logout)

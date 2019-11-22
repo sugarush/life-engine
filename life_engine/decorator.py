@@ -1,6 +1,11 @@
+from ujson import dumps
+
 from model.character import Character
 
 def character_event(handler):
-    async def handler(event):
+    async def handler(socket, event):
         character = await Character.find_by_id(event.character.id)
-        await handler(character, event)
+        if character and socket is character.socket:
+            await handler(character, event)
+        else:
+            await socket.json({ 'type': 'invalid-character-event' })
