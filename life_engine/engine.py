@@ -22,7 +22,7 @@ class LifeEngine(object):
     time = time()
     tick_radius = 50
     tick_units = 'm'
-    tick_timeout = 5
+    tick_timeout = 6
     corpse_timeout = 300
 
     @server.listener('before_server_start')

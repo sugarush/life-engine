@@ -1,19 +1,19 @@
 <template>
-  <div>
+  <div class='ui container'>
     <top-nav />
-    <connection />
+    <message />
     <nuxt />
   </div>
 </template>
 
 <script>
 import TopNav from "~/components/TopNav.vue";
-import Connection from "~/components/Connection.vue";
+import Message from "~/components/Message.vue";
 
 export default {
   components: {
     TopNav,
-    Connection
+    Message
   }
 }
 </script>
