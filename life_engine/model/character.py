@@ -1,37 +1,34 @@
 from time import time
-from uuid import uuid4
 from copy import deepcopy
 from collections import Counter
 
 from sugar_odm import MongoDBModel, Model, Field
-from sugar_api import Redis
+from sugar_api import Redis, JSONAPIMixin
 
 from . item import Item
 from . equipment import Equipment
 from . attributes import Attributes
 from . resistances import Resistances
 from . profession import Profession
+from . state import State
+from . name import Name
+from . level import Level
 
 
-class Level(Model):
-    current = Field(type=int, required=True)
-    experience = Field(type=int, required=True)
-    next = Field(type=int)
+class Character(MongoDBModel, JSONAPIMixin):
 
+    __set__ = {
+        'name': [ ],
+        'profession': [ ],
+        'attributes': [ ],
+        'resistances': [ ],
+        'equipment': [ ],
+        'inventory': [ ],
+        'state': [ ],
+        'health': [ ],
+        'level': [ ]
+    }
 
-class State(Model):
-    target = Field()
-    hostile = Field(type=bool)
-    retaliate = Field(type=bool)
-    dead = Field(type=int)
-
-
-class Name(Model):
-    first = Field(required=True)
-    last = Field()
-
-
-class Character(MongoDBModel):
     email = Field()
     name = Field(type=Name, required=True)
     profession = Field(required=True)
@@ -68,6 +65,7 @@ class Character(MongoDBModel):
                         armor += item.armor
 
         health = attributes['constitution'] * 10
+        hit = attributes['dexterity']
 
         return {
             'armor': armor,
@@ -101,16 +99,12 @@ class Character(MongoDBModel):
     async def attack(self):
         stats = await self.stats()
         other = await Character.find_by_id(self.state.target)
-        await other.damage(5 * (stats['attributes']['strength'] / 10))
-
-    async def damage(self, damage=0):
-        other = await Character.find_by_id(self.state.target)
-        self.health -= damage
-        if self.health <= 0:
-            self.state.dead = time()
-            self.state.target = None
-            await other.killing_blow(self)
-        await self.save()
+        other.health -= 5 * (stats['attributes']['strength'] / 10)
+        if other.health <= 0:
+            other.state.dead = time()
+            other.state.target = None
+            await self.killing_blow(other)
+        await other.save()
 
     async def killing_blow(self, other):
         self.add_experience(other.level.experience)
@@ -118,7 +112,7 @@ class Character(MongoDBModel):
 
     def add_experience(self, experience):
         self.level.experience += experience
-        if self.level.experience >= self.level.next:
+        if self.level.next and (self.level.experience >= self.level.next):
             self.level_up()
 
     def level_up(self):

@@ -1,6 +1,9 @@
-from time import time, sleep
+from asyncio import run, sleep, create_task, CancelledError
+from time import time
+from uuid import uuid4
 
-import yaml
+from sanic import Sanic
+from colorama import Style, Fore, Back
 
 from sugar_odm import MongoDB
 from sugar_api import Redis
@@ -10,34 +13,43 @@ from model.character import Character
 
 class LifeEngine(object):
 
-    professions = None
+    server = Sanic('life-engine')
+    shard = str(uuid4())
+    secret = str(uuid4())
+    iterator = None
 
-    @classmethod
-    async def setup(cls):
-        pass
+    tick_radius = 50
+    tick_units = 'm'
+    tick_timeout = 5
+    corpse_timeout = 300
 
-    @classmethod
-    async def teardown(self):
-        pass
-
-    @classmethod
-    async def run(cls, loop):
+    @server.listener('before_server_start')
+    async def setup(app, loop):
+        LifeEngine.iterator = create_task(LifeEngine.run())
         MongoDB.set_event_loop(loop)
         await Redis.set_event_loop(loop)
 
-        redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
-
-        await cls.setup()
-
+    @server.listener('before_server_stop')
+    async def teardown(app, loop):
+        LifeEngine.iterator.cancel()
         try:
-            print('LifeEngine starting...')
-            while True:
-                async for key, _ in redis.izscan('location'):
-                    await cls.tick(key)
-                sleep(5)
-        except KeyboardInterrupt:
-            await cls.teardown()
-            print('LifeEngine exiting...')
+            await LifeEngine.iterator
+        except CancelledError:
+            print(f'{Fore.GREEN}Stopped Life Engine iterator.{Style.RESET_ALL}')
+        MongoDB.close()
+        await Redis.close()
+
+    @classmethod
+    async def run(cls):
+        while True:
+            await cls.iterate('location')
+            await sleep(cls.tick_timeout)
+
+    @classmethod
+    async def iterate(cls, table):
+        redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
+        async for key, _ in redis.izscan(table):
+            await cls.tick(key)
 
     @classmethod
     async def tick(cls, key):
@@ -45,17 +57,18 @@ class LifeEngine(object):
 
         if this:
             if this.state.dead:
-                if time() - this.state.dead > 300:
+                if time() - this.state.dead > cls.corpse_timeout:
                     if not this.email:
                         await this.delete()
                 return
             else:
                 stats = await this.stats()
                 if this.health < stats['health']:
-                    await this.damage(-1)
+                    this.health += 1
+                    await this.save()
 
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
-        result = await redis.georadiusbymember('location', key, 50, unit='m')
+        result = await redis.georadiusbymember('location', key, cls.tick_radius, unit=cls.tick_units)
 
         for _key in result:
 

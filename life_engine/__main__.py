@@ -1,104 +1,34 @@
-import asyncio
-import uvloop
-from random import random
+import argparse, sys
 
-from sugar_api import Redis
+from colorama import Fore, Back, Style
 
-from model.character import Character
-from engine import LifeEngine
 
-class Engine(LifeEngine):
+parser = argparse.ArgumentParser(description='life')
+subparsers = parser.add_subparsers(help='command help', dest='command')
+api_parser = subparsers.add_parser('api', help='api help')
+engine_parser = subparsers.add_parser('engine', help='engine help')
 
-    ogres = [ ]
-    samael = None
 
-    @classmethod
-    async def setup(cls):
+if len(sys.argv) == 1:
+    parser.print_help()
 
-        for i in range(0, 1):
 
-            ogre = Character({
-                'name': {
-                    'first': 'Ogre'
-                },
-                'profession': 'Warrior',
-                'level': {
-                    'current': 1,
-                    'experience': 500
-                },
-                'health': 100,
-                'attributes': {
-                    'strength': 10,
-                    'dexterity': 5,
-                    'agility': 5,
-                    'constitution': 10
-                },
-                'resistances': {
-                    'fire': 0,
-                    'frost': 0,
-                    'holy': 0,
-                    'shadow': 0
-                },
-                'state': {
-                    'hostile': True
-                }
-            })
+args = parser.parse_args()
 
-            cls.ogres.append(ogre)
 
-            await ogre.save()
-            #await ogre.set_location(42.4091595 + random() / 1000, -84.5396023 + random() / 1000)
-            await ogre.set_location(42.4091595, -84.5396023)
+if args.command == 'api':
+    import resource
 
-        cls.samael = samael = Character({
-            'email': 'paul.severance@gmail.com',
-            'name': {
-                'first': 'Samael'
-            },
-            'profession': 'Warrior',
-            'level': {
-                'current': 10,
-                'experience': 50000,
-                'next': 75000
-            },
-            'health': 500,
-            'attributes': {
-                'strength': 50,
-                'dexterity': 50,
-                'agility': 50,
-                'constitution': 50
-            },
-            'resistances': {
-                'fire': 50,
-                'frost': 50,
-                'holy': 100,
-                'shadow': 50
-            },
-            'state': {
-                'retaliate': True
-            },
-            'equipment': {
-                'head': {
-                    'title': 'Obsidian Crown',
-                    'slot': 'head',
-                    'attributes': {
-                        'strength': 100
-                    },
-                    'armor': 1000
-                }
-            }
-        })
+    from api import server
 
-        await samael.save()
-        await samael.set_location(42.4091595, -84.5396023)
+    print(f'{Fore.GREEN}Starting Life API Server...{Style.RESET_ALL}')
+    server.run(host='127.0.0.1', port='8000')
+    print(f'{Fore.GREEN}Stopping Life API Server...{Style.RESET_ALL}')
+elif args.command == 'engine':
+    from engine import LifeEngine
 
-    @classmethod
-    async def teardown(cls):
-        for ogre in cls.ogres:
-            await ogre.remove_location()
-            await ogre.delete()
-        await cls.samael.delete()
-
-loop = uvloop.new_event_loop()
-asyncio.set_event_loop(loop)
-loop.run_until_complete(Engine.run(loop))
+    print(f'{Fore.GREEN}Starting Life Engine...{Style.RESET_ALL}')
+    LifeEngine.server.run()
+    print(f'{Fore.GREEN}Stopping Life Engine...{Style.RESET_ALL}')
+else:
+    parser.print_help()

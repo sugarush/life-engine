@@ -1,0 +1,9 @@
+-e git+https://github.com/sugarush/sugar-asynctest@master#egg=sugar_asynctest
+-e git+https://github.com/sugarush/sugar-document@master#egg=sugar_document
+-e git+https://github.com/sugarush/sugar-odm@master#egg=sugar_odm
+-e git+https://github.com/sugarush/sugar-api@master#egg=sugar_api
+
+aioredis==1.3.0
+colorama==0.4.1
+PyJWT==1.7.1
+uvloop==0.14.0
