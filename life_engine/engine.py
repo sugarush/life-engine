@@ -11,6 +11,7 @@ from sugar_api import Redis
 from model.character import Character
 from decorator import character_event
 from connections import Connections
+from world.cache import WorldCache
 
 
 class LifeEngine(object):
@@ -22,23 +23,30 @@ class LifeEngine(object):
     time = time()
     tick_radius = 50
     tick_units = 'm'
-    tick_timeout = 6
+    tick_timeout = 5
     corpse_timeout = 300
 
     @server.listener('before_server_start')
     async def setup(app, loop):
-        LifeEngine.iterator = create_task(LifeEngine.run())
-        print(f'{Fore.GREEN}Started Life Engine iterator.{Style.RESET_ALL}')
         MongoDB.set_event_loop(loop)
         await Redis.set_event_loop(loop)
+        LifeEngine.LifeEngine_run = create_task(LifeEngine.run())
+        print(f'{Fore.GREEN}Started Life Engine iterator.{Style.RESET_ALL}')
+        LifeEngine.WorldCache_init = create_task(WorldCache.init())
+        print(f'{Fore.GREEN}Started Life Engine world cache.{Style.RESET_ALL}')
 
     @server.listener('before_server_stop')
     async def teardown(app, loop):
-        LifeEngine.iterator.cancel()
+        LifeEngine.LifeEngine_run.cancel()
         try:
-            await LifeEngine.iterator
+            await LifeEngine.LifeEngine_run
         except CancelledError:
             print(f'{Fore.GREEN}Stopped Life Engine iterator.{Style.RESET_ALL}')
+        LifeEngine.WorldCache_init.cancel()
+        try:
+            await LifeEngine.WorldCache_init
+        except CancelledError:
+            pass
         MongoDB.close()
         await Redis.close()
 

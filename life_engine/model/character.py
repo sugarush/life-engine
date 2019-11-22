@@ -20,7 +20,10 @@ from . level import Level
 class Character(MongoDBModel, JSONAPIMixin):
 
     __set__ = {
+        'shard': [ ],
+        'profile': [ ],
         'name': [ ],
+        'title': [ ],
         'profession': [ ],
         'attributes': [ ],
         'resistances': [ ],
@@ -34,7 +37,8 @@ class Character(MongoDBModel, JSONAPIMixin):
     shard = Field()
     profile = Field()
     name = Field(type=Name, required=True)
-    profession = Field(required=True)
+    title = Field()
+    profession = Field(type=Profession, required=True)
     attributes = Field(type=Attributes, required=True)
     resistances = Field(type=Resistances)
     equipment = Field(type=Equipment)
@@ -46,14 +50,11 @@ class Character(MongoDBModel, JSONAPIMixin):
     @property
     async def stats(self):
         profession = await Profession.find_one({
-            'title': self.profession
+            'title': self.profession.title
         })
 
         attributes = Counter(self.attributes._data)
         resistances = Counter(self.resistances._data)
-
-        attributes += Counter(profession.attributes._data)
-        resistances += Counter(profession.resistances._data)
 
         armor = 0
 

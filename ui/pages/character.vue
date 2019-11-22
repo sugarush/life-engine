@@ -1,7 +1,11 @@
 <template>
   <div>
     <div v-if="!characters.length">
-      <h1>Create a Character</h1>
+      <div class="ui centered grid">
+        <div class="row">
+          <h1>New Player?</h1>
+        </div>
+      </div>
       <create-character />
     </div>
     <div v-else>

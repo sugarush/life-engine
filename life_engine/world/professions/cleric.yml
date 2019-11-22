@@ -1,0 +1,11 @@
+---
+
+  title: cleric
+
+  attributes:
+    strength: 60
+    dexterity: 75
+    constitution: 95
+    intelligence: 75
+    wisdom: 100
+    charisma: 80
