@@ -2,12 +2,22 @@ import os
 from time import time
 
 from yaml import load
-from yaml import Loader
 
 from model.character import Character
 
+from jinja2 import Environment, FileSystemLoader, select_autoescape
+
 
 class WorldCache(object):
+
+    jinja_monsters = Environment(
+        loader = FileSystemLoader(os.path.join(os.path.dirname(__file__), 'monsters')),
+        autoescape = select_autoescape(['yml'])
+    )
+    jinja_professions = Environment(
+        loader = FileSystemLoader(os.path.join(os.path.dirname(__file__), 'professions')),
+        autoescape = select_autoescape(['yml'])
+    )
 
     directory = os.path.dirname(__file__)
 
@@ -40,16 +50,16 @@ class WorldCache(object):
 
         for name in os.listdir(professions_directory):
             base = name.split('.')[0]
-            file = open(os.path.join(professions_directory, name))
-            cls.professions[base] = load(file, Loader=Loader)
+            template = cls.jinja_professions.get_template(name)
+            cls.professions[base] = load(template.render())
 
         path = f'monsters/{cls.country}/{cls.state}/{cls.county}'
         monsters_directory = os.path.join(cls.directory, path)
 
         for name in os.listdir(monsters_directory):
             cls.base = base = name.split('.')[0]
-            file = open(os.path.join(monsters_directory, name))
-            cls.monsters[base] = load(file, Loader=Loader)
+            template = cls.jinja_monsters.get_template(f'{cls.country}/{cls.state}/{cls.county}/{name}')
+            cls.monsters[base] = load(template.render())
             for m in cls.monsters[base]:
                 character = Character(m['monster'])
                 character.shard = cls.shard
