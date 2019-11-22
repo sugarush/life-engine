@@ -1,9 +1,13 @@
+import asyncio
 from time import time
 from copy import deepcopy
 from collections import Counter
+from datetime import datetime
+
+from pymongo import GEOSPHERE, ASCENDING
 
 from sugar_odm import MongoDBModel, Model, Field
-from sugar_api import Redis, JSONAPIMixin
+from sugar_api import Redis, JSONAPIMixin, TimestampMixin
 
 from connections import Connections
 
@@ -15,11 +19,19 @@ from . profession import Profession
 from . state import State
 from . name import Name
 from . level import Level
+from . location import Location
 
 
-class Character(MongoDBModel, JSONAPIMixin):
+class Character(MongoDBModel, JSONAPIMixin, TimestampMixin):
+
+    __index__ = [
+        {
+            'keys': [('location', GEOSPHERE)]
+        }
+    ]
 
     __set__ = {
+        'shard': [ ],
         'profile': [ ],
         'name': [ ],
         'title': [ ],
@@ -30,27 +42,33 @@ class Character(MongoDBModel, JSONAPIMixin):
         'inventory': [ ],
         'state': [ ],
         'health': [ ],
-        'level': [ ]
+        'level': [ ],
+        'location': [ ],
+        'touched': [ ]
     }
 
+    shard = Field(required=True)
     profile = Field()
     name = Field(type=Name, required=True)
     title = Field()
     profession = Field(type=Profession, required=True)
-    attributes = Field(type=Attributes)
-    resistances = Field(type=Resistances)
+    attributes = Field(type=Attributes, required=True)
+    resistances = Field(type=Resistances, required=True)
     equipment = Field(type=Equipment)
     inventory = Field(type=[ Item ])
     state = Field(type=State, required=True)
     health = Field(type=int, required=True)
     level = Field(type=Level, required=True)
+    touched = Field(type='timestamp')
+    location = Field(type=Location)
+    world_id = Field()
+
+    async def touch(self):
+        self.touched = datetime.now()
+        await self.save()
 
     @property
     async def stats(self):
-        profession = await Profession.find_one({
-            'title': self.profession.title
-        })
-
         attributes = Counter(self.attributes._data)
         resistances = Counter(self.resistances._data)
 
@@ -67,12 +85,11 @@ class Character(MongoDBModel, JSONAPIMixin):
                     if item.armor:
                         armor += item.armor
 
-        health = attributes['constitution'] * 10
-        hit = attributes['dexterity']
+        max_health = self.attributes['constitution'] * 10
 
         return {
             'armor': armor,
-            'health': health,
+            'max_health': max_health,
             'attributes': dict(attributes),
             'resistances': dict(resistances)
         }
@@ -95,17 +112,13 @@ class Character(MongoDBModel, JSONAPIMixin):
         self.shard = name
         await self.save()
 
-    async def location(self):
+    async def redis_set_location(self, longitude, latitude):
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
-        coordinates = await redis.geopos('position', self.client_id)
+        await redis.geoadd('location', self.location.coordinates[0], self.location.coordinates[1], self.client_id)
 
-    async def set_location(self, longitude, latitude):
+    async def redis_remove_location(self):
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
-        await redis.geoadd('position', longitude, latitude, self.client_id)
-
-    async def remove_location(self):
-        redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
-        await redis.zrem('position', self.client_id)
+        await redis.zrem('location', self.client_id)
 
     async def target(self, other):
         self.state.target = other.id
@@ -116,6 +129,14 @@ class Character(MongoDBModel, JSONAPIMixin):
     async def untarget(self):
         self.state.target = None
         await self.save()
+
+    async def revive(self):
+        self.health = (await self.stats)['max_health']
+
+    async def regenerate(self):
+        if self.health < (await self.stats)['max_health']:
+            self.health += 1
+            await self.save()
 
     async def attack(self):
         other = await Character.find_by_id(self.state.target)

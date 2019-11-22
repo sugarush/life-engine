@@ -1,9 +1,10 @@
 import os
+from time import time
 
 from yaml import load
 from yaml import Loader
 
-from model.monster import Monster
+from model.character import Character
 
 
 class WorldCache(object):
@@ -14,7 +15,9 @@ class WorldCache(object):
     country = None
     state = None
     county = None
+    base = None
 
+    monster_layout = { }
     monsters = { }
     professions = { }
 
@@ -44,10 +47,27 @@ class WorldCache(object):
         monsters_directory = os.path.join(cls.directory, path)
 
         for name in os.listdir(monsters_directory):
-            base = name.split('.')[0]
+            cls.base = base = name.split('.')[0]
             file = open(os.path.join(monsters_directory, name))
             cls.monsters[base] = load(file, Loader=Loader)
             for m in cls.monsters[base]:
-                monster = Monster(m['monster'])
-                monster.shard = cls.shard
-                await monster.save()
+                character = Character(m['monster'])
+                character.shard = cls.shard
+                await character.save()
+                await character.touch()
+                await character.redis_set_location(
+                    character.location.coordinates[0],
+                    character.location.coordinates[1]
+                )
+                cls.monsters[character.id] = True
+
+    @classmethod
+    async def close(cls):
+        for data in cls.monsters[cls.base]:
+            print(cls.shard, data['monster']['world_id'])
+            character = await Character.find_one({
+                'shard': cls.shard,
+                'world_id': data['monster']['world_id']
+            })
+            await character.redis_remove_location()
+            await character.delete()

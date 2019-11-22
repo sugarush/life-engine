@@ -26,7 +26,7 @@ class LifeEngine(object):
     tick_radius = 50
     tick_units = 'm'
     tick_timeout = 5
-    iterate_timeout = 0.1
+    iterate_timeout = 0.0001
     corpse_timeout = 300
 
     @server.listener('before_server_start')
@@ -51,6 +51,7 @@ class LifeEngine(object):
             await LifeEngine.WorldCache_init
         except CancelledError:
             pass
+        await WorldCache.close()
         MongoDB.close()
         await Redis.close()
 
@@ -65,31 +66,30 @@ class LifeEngine(object):
     async def iterate(cls):
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
         start = time()
-        async for key, _ in redis.izscan('position', match=f'{cls.shard}:*'):
-            split = key.split(':')
+        async for key, _ in redis.izscan('location', match=f'{cls.shard}:*'):
+            split = key.split(b':')
             shard = split[0]
             key = split[1]
             await cls.tick(key)
             await sleep(cls.iterate_timeout)
         end = time()
         if (end - start) > cls.tick_timeout:
-            cls.output.error(f'{Fore.RED}Server is lagging.{Style.RESET_ALL}')
+            cls.output.error(f'{Fore.RED}Server is lagging due to too many users or maladjusted iterate_timeout.{Style.RESET_ALL}')
 
     @classmethod
     async def tick(cls, key):
         this = await Character.find_by_id(key.decode())
 
+
         if this:
+            await this.touch()
             if this.state.dead:
                 if time() - this.state.dead > cls.corpse_timeout:
                     if not this.email:
-                        await this.delete()
+                        await this.revive()
                 return
             else:
-                stats = await this.stats()
-                if this.health < stats['health']:
-                    this.health += 1
-                    await this.save()
+                await this.regenerate()
 
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
         result = await redis.georadiusbymember('position', key, cls.tick_radius, unit=cls.tick_units)

@@ -1,7 +1,8 @@
 ---
 
-  - type: single
+  - deployment: single
     monster:
+      world_id: "1"
       location:
         type: Point
         coordinates: [ 42.8134055, -84.7837708 ]
@@ -13,7 +14,13 @@
       state:
         hostile: true
       health: 1000
-      expire: 3600
       level:
         current: 1
         experience: 500
+      attributes:
+        strength: 10
+        dexterity: 10
+        constitution: 10
+        intelligence: 10
+      resistances:
+        fire: 10
