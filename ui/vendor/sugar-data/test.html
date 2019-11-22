@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <title>Mocha Tests</title>
+    <script src='http://localhost:35729/livereload.js?snipver=1'></script>
+    <link href="/node_modules/mocha/mocha.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="mocha"></div>
+
+    <script src='/bower_components/lodash/dist/lodash.js'></script>
+
+    <script src='/node_modules/chai/chai.js'></script>
+    <script src="/node_modules/mocha/mocha.js"></script>
+
+    <script type='module'>
+      mocha.setup('bdd');
+    </script>
+
+    <script src='/tests/test_webtoken.js' type='module'></script>
+    <script src='/tests/test_request.js' type='module'></script>
+    <script src='/tests/test_model.js' type='module'></script>
+    <script src='/tests/test_collection.js' type='module'></script>
+    <script src='/tests/test_urlencode.js' type='module'></script>
+
+    <script type='module'>
+      mocha.checkLeaks();
+      mocha.run();
+    </script>
+  </body>
+</html>

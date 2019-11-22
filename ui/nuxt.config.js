@@ -12,7 +12,14 @@ export default {
       { hid: 'description', name: 'description', content: process.env.npm_package_description || '' }
     ],
     link: [
-      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+      { rel: 'stylesheet', type: 'text/css', href: 'https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.2/dist/semantic.min.css'}
+    ],
+    script: [
+      { src: '/jwt-decode.min.js', type: 'text/javascript' },
+      { src: '/lodash.min.js', type: 'text/javascript' },
+      { src: 'https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js', type: 'text/javascript' },
+      { src: 'https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.2/dist/semantic.min.js', type: 'text/javascript'}
     ]
   },
   /*
@@ -48,5 +55,9 @@ export default {
     */
     extend (config, ctx) {
     }
+  },
+  router: {
+    linkActiveClass: 'active',
+    linkExactActiveClass: 'active-exact'
   }
 }
