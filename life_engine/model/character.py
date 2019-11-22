@@ -5,6 +5,8 @@ from collections import Counter
 from sugar_odm import MongoDBModel, Model, Field
 from sugar_api import Redis, JSONAPIMixin
 
+from connections import Connections
+
 from . item import Item
 from . equipment import Equipment
 from . attributes import Attributes
@@ -29,6 +31,7 @@ class Character(MongoDBModel, JSONAPIMixin):
         'level': [ ]
     }
 
+    shard = Field()
     email = Field()
     name = Field(type=Name, required=True)
     profession = Field(required=True)
@@ -73,6 +76,16 @@ class Character(MongoDBModel, JSONAPIMixin):
             'attributes': dict(attributes),
             'resistances': dict(resistances)
         }
+
+    @property
+    def socket(self):
+        if self.email:
+            return Connections.socket_by_character_id(self.id)
+        return None
+
+    async def set_shard(self, name):
+        self.shard = name
+        await self.save()
 
     async def location(self):
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)

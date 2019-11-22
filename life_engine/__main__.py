@@ -19,16 +19,20 @@ args = parser.parse_args()
 if args.command == 'api':
     import resource
 
+    import handlers
     from api import server
 
     print(f'{Fore.GREEN}Starting Life API Server...{Style.RESET_ALL}')
     server.run(host='127.0.0.1', port='8000')
     print(f'{Fore.GREEN}Stopping Life API Server...{Style.RESET_ALL}')
 elif args.command == 'engine':
-    from engine import LifeEngine
+    from sanic.websocket import WebSocketProtocol
+
+    import websocket
+    from engine import LifeEngine as LE
 
     print(f'{Fore.GREEN}Starting Life Engine...{Style.RESET_ALL}')
-    LifeEngine.server.run()
+    LE.server.run(protocol=WebSocketProtocol)
     print(f'{Fore.GREEN}Stopping Life Engine...{Style.RESET_ALL}')
 else:
     parser.print_help()

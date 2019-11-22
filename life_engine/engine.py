@@ -8,6 +8,7 @@ from colorama import Style, Fore, Back
 from sugar_odm import MongoDB
 from sugar_api import Redis
 
+from decorator import character_event
 from model.character import Character
 
 
@@ -18,6 +19,7 @@ class LifeEngine(object):
     secret = str(uuid4())
     iterator = None
 
+    time = time()
     tick_radius = 50
     tick_units = 'm'
     tick_timeout = 5
@@ -42,7 +44,8 @@ class LifeEngine(object):
     @classmethod
     async def run(cls):
         while True:
-            await cls.iterate('location')
+            cls.time = time()
+            await cls.iterate(cls.shard)
             await sleep(cls.tick_timeout)
 
     @classmethod
@@ -77,6 +80,7 @@ class LifeEngine(object):
 
             other = await Character.find_by_id(_key.decode())
             await cls.interact(this, other)
+            await cls.step(this, other)
 
     @classmethod
     async def interact(cls, this, other):
@@ -95,5 +99,35 @@ class LifeEngine(object):
             elif not this.email and not other.email:
                 pass
 
+    @classmethod
+    async def step(cls, this, other):
             if this.state.target:
                 await this.attack()
+
+    @classmethod
+    @character_event
+    async def login(cls, event, character):
+        cls.set_character_location(event, character)
+
+    @classmethod
+    @character_event
+    async def set_character_location(cls, event, character):
+        await character.set_location(event.data.longitude, event.data.latitude)
+        await character.socket.send({
+            'type': 'update-player-location',
+            'data': {
+                'longitude': events.data.longitude,
+                'latitude': events.data.latitude
+            }
+        })
+
+    @classmethod
+    @character_event
+    async def logout(cls, event, character):
+        await character.remove_location()
+        await character.socket.send({
+            'type': 'confirm-logout',
+            'data': {
+                'message': 'Successfully logged out.'
+            }
+        })
