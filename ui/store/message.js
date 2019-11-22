@@ -17,7 +17,7 @@ export const mutations = {
   },
   expire(state) {
     state.messages = _.reject(state.messages, (message) => {
-      return Date.now() > message.timestamp + (message.timeout * 1000);
+      return Date.now() > (message.timestamp + (message.timeout * 1000));
     });
   }
 }
