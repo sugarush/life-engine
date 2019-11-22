@@ -1,3 +1,5 @@
+import hashlib
+
 from sugar_odm import MongoDBModel, Field
 from sugar_api import JSONAPIMixin
 
@@ -5,6 +7,7 @@ from  . name import Name
 
 
 class Profile(MongoDBModel, JSONAPIMixin):
+    username = Field(required=True)
     name = Field(type=Name)
     email = Field(required=True)
     password = Field(required=True, computed='encrypt_password')

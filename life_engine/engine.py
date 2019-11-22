@@ -17,7 +17,6 @@ class LifeEngine(object):
 
     server = Sanic('life-engine')
     shard = str(uuid4())
-    secret = str(uuid4())
     iterator = None
 
     time = time()
@@ -53,6 +52,9 @@ class LifeEngine(object):
     async def iterate(cls):
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
         async for key, _ in redis.izscan('position', match=f'{cls.shard}:*'):
+            split = key.split(':')
+            shard = split[0]
+            key = split[1]
             await cls.tick(key)
 
     @classmethod
