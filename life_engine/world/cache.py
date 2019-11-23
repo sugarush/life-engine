@@ -1,4 +1,5 @@
 import os
+from uuid import uuid4
 from time import time
 from random import random
 from logging import getLogger, basicConfig, INFO
@@ -39,7 +40,6 @@ class WorldCache(object):
     county = None
     base = None
 
-    monster_layout = { }
     monsters = { }
     professions = { }
 
@@ -52,9 +52,10 @@ class WorldCache(object):
         cls.country = args.country
         cls.state = args.state
         cls.county = args.county
+        cls.shard = args.shard
 
     @classmethod
-    async def init(cls):
+    def init(cls):
         if not cls.country:
             raise Exception('WorldCache.init: Run configure before init.')
 
@@ -75,6 +76,9 @@ class WorldCache(object):
         cls.jinja_professions.globals = globals
         cls.jinja_professions.filters = filters
 
+    @classmethod
+    def init_professions(cls):
+
         professions_directory = os.path.join(cls.directory, 'professions')
 
         for name in os.listdir(professions_directory):
@@ -82,31 +86,30 @@ class WorldCache(object):
             template = cls.jinja_professions.get_template(name)
             cls.professions[base] = loads(template.render())
 
+    @classmethod
+    async def inint_monsters(cls):
+
         path = f'monsters/{cls.country}/{cls.state}/{cls.county}'
         monsters_directory = os.path.join(cls.directory, path)
 
-        for name in os.listdir(monsters_directory):
-            cls.base = base = name.split('.')[0]
-            template = cls.jinja_monsters.get_template(f'{cls.country}/{cls.state}/{cls.county}/{name}')
-            cls.monsters[base] = loads(template.render())
-            for m in cls.monsters[base]['monsters']:
-                character = Character(m['monster'])
-                character.shard = cls.shard
-                await character.save()
-                await character.redis_set_location(
-                    character.location.coordinates[0],
-                    character.location.coordinates[1]
-                )
-                cls.monsters[character.id] = True
-                cls.output.info(f'{Fore.MAGENTA}Created {character.id}{Style.RESET_ALL}')
+        template = cls.jinja_monsters.get_template(f'{cls.country}/{cls.state}/{cls.county}/{cls.shard}.toml')
+        template_data = loads(template.render())
+        for m in template_data['monsters']:
+            character = Character(m['monster'])
+            character.shard = cls.shard
+            character.monster_id = str(uuid4())
+            await character.save()
+            await character.set_location(
+                character.location.coordinates[0],
+                character.location.coordinates[1]
+            )
+            cls.monsters[character.id] = True
+            cls.output.info(f'{Fore.MAGENTA}Created {character.id}{Style.RESET_ALL}')
 
     @classmethod
-    async def close(cls):
-        for m in cls.monsters[cls.base]['monsters']:
-            character = await Character.find_one({
-                'shard': cls.shard,
-                'monster_id': m['monster']['monster_id']
-            })
+    async def remove_monsters(cls):
+        for oid in cls.monsters.keys():
+            character = await Character.find_by_id(oid)
             cls.output.info(f'{Fore.MAGENTA}Removing {character.id}{Style.RESET_ALL}')
-            await character.redis_remove_location()
+            await character.remove_location()
             await character.delete()

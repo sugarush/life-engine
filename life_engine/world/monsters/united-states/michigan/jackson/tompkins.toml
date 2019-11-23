@@ -1,16 +1,16 @@
-township = "tompkins"
+shard = "tompkins"
 
-{% for i in range(100) %}
+{% for i in range(5000) %}
 [[monsters]]
   deployment = "single"
 
   [monsters.monster]
-    monster_id = "{{ i }}"
     health = 1000
 
   [monsters.monster.location]
     type = "Point"
-    coordinates = {{ coordinates(42.8134055, -84.7837708, spread=0.0001) }}
+    #coordinates = {{ coordinates(42.8134055, -84.7837708, spread=0.0001) }}
+    coordinates = {{ coordinates(42.8134055, -84.7837708, spread=1) }}
 
   [monsters.monster.name]
     first = "An Ogre"

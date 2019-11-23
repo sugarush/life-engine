@@ -20,14 +20,14 @@ from world.cache import WorldCache
 class LifeEngine(object):
 
     server = Sanic('life.engine')
-    shard = str(uuid4())
+    shard = None
     iterator = None
     output = getLogger('life.engine')
 
     time = time()
     tick_radius = 50
     tick_units = 'm'
-    tick_timeout = 30
+    tick_timeout = 10
     respawn = 600
 
     @server.listener('before_server_start')
@@ -35,11 +35,8 @@ class LifeEngine(object):
         LifeEngine.output.setLevel(INFO)
         MongoDB.set_event_loop(loop)
         await Redis.set_event_loop(loop)
-        WorldCache.set_shard(LifeEngine.shard)
         LifeEngine.LifeEngine_run = create_task(LifeEngine.run())
         LifeEngine.output.info(f'{Fore.GREEN}Started Life Engine iterator.{Style.RESET_ALL}')
-        LifeEngine.WorldCache_init = create_task(WorldCache.init())
-        LifeEngine.output.info(f'{Fore.GREEN}Started Life Engine world cache.{Style.RESET_ALL}')
 
     @server.listener('before_server_stop')
     async def teardown(app, loop):
@@ -48,14 +45,12 @@ class LifeEngine(object):
             await LifeEngine.LifeEngine_run
         except CancelledError:
             LifeEngine.output.info(f'{Fore.GREEN}Stopped Life Engine iterator.{Style.RESET_ALL}')
-        LifeEngine.WorldCache_init.cancel()
-        try:
-            await LifeEngine.WorldCache_init
-        except CancelledError:
-            pass
-        await WorldCache.close()
         MongoDB.close()
         await Redis.close()
+
+    @classmethod
+    def configure(cls, args):
+        cls.shard = args.shard
 
     @classmethod
     async def run(cls):
@@ -66,7 +61,7 @@ class LifeEngine(object):
 
     @classmethod
     async def iterate(cls):
-        redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
+        redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=5)
         start = time()
         async for key, _ in redis.izscan('location', match=f'{cls.shard}:*'):
             split = key.split(b':')
@@ -74,9 +69,9 @@ class LifeEngine(object):
             key = split[1]
             await cls.tick(key)
         end = time()
+        cls.output.info(f'{Fore.BLUE}Processing took: %ds{Style.RESET_ALL}', (end - start))
         if (end - start) > cls.tick_timeout:
-            cls.output.error(f'{Fore.RED}Server is lagging due to too many users.{Style.RESET_ALL}')
-            cls.output.error(f'{Fore.RED}Currently experiencing a time dilation of: {(end - start)}s.{Style.RESET_ALL}')
+            cls.output.error(f'{Fore.RED}Currently experiencing a time dilation of: {(end - start) - cls.tick_timeout}s.{Style.RESET_ALL}')
 
     @classmethod
     async def tick(cls, key):
@@ -85,45 +80,47 @@ class LifeEngine(object):
         if this:
             if this.state.dead:
                 if time() - this.state.dead > cls.respawn:
-                    if not this.email:
-                        await this.revive()
+                    await this.revive()
                 return
             else:
                 await this.regenerate()
 
-        redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
-        result = await redis.georadiusbymember('position', key, cls.tick_radius, unit=cls.tick_units)
+            redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
+            try:
+                result = await redis.georadiusbymember('location', f'{cls.shard}:{key.decode()}', cls.tick_radius, unit=cls.tick_units)
+            except Exception:
+                return None
 
-        for _key in result:
+            for _key in result:
 
-            if key == _key:
-                continue
+                if key == _key:
+                    continue
 
-            other = await Character.find_by_id(_key.decode())
-            await cls.interact(this, other)
-            await cls.step(this, other)
+                split = _key.split(b':')
+                shard = split[0]
+                oid = split[1]
 
-    @classmethod
-    async def interact(cls, this, other):
-        if this and other:
-            # A player is interacting with another player
-            if this.email and other.email:
-                pass
-            # A player is interacting with a mob
-            elif this.email and not other.email:
-                pass
-            # A mob is interacting with a player
-            elif not this.email and other.email:
-                if this.state.hostile and not this.state.target:
-                    await this.target(other)
-            # Mobs do not interact with other mobs
-            elif not this.email and not other.email:
-                pass
+                other = await Character.find_by_id(oid.decode())
 
-    @classmethod
-    async def step(cls, this, other):
+                if this and other:
+                    # A player is interacting with another player
+                    if this.monster_id and other.monster_id:
+                        pass
+                    # A player is interacting with a mob
+                    elif this.monster_id and not other.monster_id:
+                        pass
+                    # A mob is interacting with a player
+                    elif not this.monster_id and other.monster_id:
+                        if this.state.hostile and not this.state.target:
+                            await this.target(other)
+                    # Mobs do not interact with other mobs
+                    elif not this.monster_id and not other.monster_id:
+                        pass
+
             if this.state.target:
                 await this.attack()
+            if not this.state.dead:
+                await this.wander()
 
     @classmethod
     async def disconnect(cls, socket):

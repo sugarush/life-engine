@@ -68,6 +68,12 @@ class Character(MongoDBModel, JSONAPIMixin, TimestampMixin):
         self.touched = datetime.now()
         await self.save()
 
+    def is_monster(self):
+        return self.monster_id and True
+
+    def is_player(self):
+        return (not self.monster_id) and True
+
     @property
     async def stats(self):
         attributes = Counter(self.attributes._data)
@@ -105,31 +111,30 @@ class Character(MongoDBModel, JSONAPIMixin, TimestampMixin):
     def connected(self):
         return not self.shard is None
 
-    @property
-    def client_id(self):
-        return f'{self.shard}:{self.id}'
-
     async def set_shard(self, name):
         self.shard = name
         await self.save()
 
-    async def redis_set_location(self, longitude, latitude):
+    async def set_location(self, longitude, latitude):
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
-        await redis.geoadd('location', self.location.coordinates[0], self.location.coordinates[1], self.client_id)
+        await redis.geoadd('location', longitude, latitude, f'{self.shard}:{self.id}')
+        self.longitude = longitude
+        self.latitude = latitude
 
-    async def redis_remove_location(self):
+    async def remove_location(self):
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
-        await redis.zrem('location', self.client_id)
+        await redis.zrem('location', f'{self.shard}:{self.id}')
+        self.longitude = None
+        self.latitude = None
+        await self.save()
 
-    async def target(self, other):
+    def target(self, other):
         self.state.target = other.id
-        await self.save()
         if other.state.retaliate:
-            await other.target(self)
+            other.target(self)
 
-    async def untarget(self):
+    def untarget(self):
         self.state.target = None
-        await self.save()
 
     async def revive(self):
         self.health = (await self.stats)['max_health']
@@ -147,6 +152,9 @@ class Character(MongoDBModel, JSONAPIMixin, TimestampMixin):
             other.state.target = None
             await self.killing_blow(other)
         await other.save()
+
+    async def wander(self):
+        pass
 
     async def killing_blow(self, other):
         self.add_experience(other.level.experience)
