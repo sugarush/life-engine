@@ -1,14 +1,16 @@
-{% for i in range(10) %}
+township = "tompkins"
+
+{% for i in range(100) %}
 [[monsters]]
   deployment = "single"
 
   [monsters.monster]
-    world_id = "{{ i }}"
+    monster_id = "{{ i }}"
     health = 1000
 
   [monsters.monster.location]
     type = "Point"
-    coordinates = {{ coordinates(42.8134055, -84.7837708, spread=0.001) }}
+    coordinates = {{ coordinates(42.8134055, -84.7837708, spread=0.0001) }}
 
   [monsters.monster.name]
     first = "An Ogre"

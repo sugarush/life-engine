@@ -105,7 +105,7 @@ class WorldCache(object):
         for m in cls.monsters[cls.base]['monsters']:
             character = await Character.find_one({
                 'shard': cls.shard,
-                'world_id': m['monster']['world_id']
+                'monster_id': m['monster']['monster_id']
             })
             cls.output.info(f'{Fore.MAGENTA}Removing {character.id}{Style.RESET_ALL}')
             await character.redis_remove_location()

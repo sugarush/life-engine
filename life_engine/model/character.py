@@ -32,6 +32,7 @@ class Character(MongoDBModel, JSONAPIMixin, TimestampMixin):
 
     __set__ = {
         'shard': [ ],
+        'monster_id': [ ],
         'profile': [ ],
         'name': [ ],
         'title': [ ],
@@ -48,6 +49,7 @@ class Character(MongoDBModel, JSONAPIMixin, TimestampMixin):
     }
 
     shard = Field(required=True)
+    monster_id = Field()
     profile = Field()
     name = Field(type=Name, required=True)
     title = Field()
@@ -61,7 +63,6 @@ class Character(MongoDBModel, JSONAPIMixin, TimestampMixin):
     level = Field(type=Level, required=True)
     touched = Field(type='timestamp')
     location = Field(type=Location)
-    world_id = Field()
 
     async def touch(self):
         self.touched = datetime.now()

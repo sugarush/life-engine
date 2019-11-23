@@ -91,9 +91,6 @@ class LifeEngine(object):
             else:
                 await this.regenerate()
 
-        if this.world_id:
-            return
-
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
         result = await redis.georadiusbymember('position', key, cls.tick_radius, unit=cls.tick_units)
 
