@@ -27,7 +27,7 @@ class LifeEngine(object):
     time = time()
     tick_radius = 50
     tick_units = 'm'
-    tick_timeout = 60
+    tick_timeout = 30
     respawn = 600
 
     @server.listener('before_server_start')
@@ -90,6 +90,9 @@ class LifeEngine(object):
                 return
             else:
                 await this.regenerate()
+
+        if this.world_id:
+            return
 
         redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
         result = await redis.georadiusbymember('position', key, cls.tick_radius, unit=cls.tick_units)

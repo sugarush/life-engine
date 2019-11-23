@@ -1,0 +1,34 @@
+{% for i in range(10) %}
+[[monsters]]
+  deployment = "single"
+
+  [monsters.monster]
+    world_id = "{{ i }}"
+    health = 1000
+
+  [monsters.monster.location]
+    type = "Point"
+    coordinates = {{ coordinates(42.8134055, -84.7837708, spread=0.001) }}
+
+  [monsters.monster.name]
+    first = "An Ogre"
+
+  [monsters.monster.profession]
+    title = "wizard"
+
+  [monsters.monster.state]
+    hostile = true
+
+  [monsters.monster.level]
+    current = 1
+    experience = 500
+
+  [monsters.monster.attributes]
+    strength = 10
+    dexterity = 10
+    constitution = 10
+    intelligence = 10
+
+  [monsters.monster.resistances]
+    fire = 10
+{% endfor %}

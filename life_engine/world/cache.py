@@ -5,7 +5,7 @@ from logging import getLogger, basicConfig, INFO
 basicConfig(format='%(asctime)-15s %(name)s %(message)s')
 
 from colorama import Fore, Back, Style
-from yaml import load, Loader
+from toml import loads
 
 from model.character import Character
 
@@ -24,11 +24,11 @@ class WorldCache(object):
 
     jinja_monsters = Environment(
         loader = FileSystemLoader(os.path.join(os.path.dirname(__file__), 'monsters')),
-        autoescape = select_autoescape(['yml'])
+        autoescape = select_autoescape(['toml'])
     )
     jinja_professions = Environment(
         loader = FileSystemLoader(os.path.join(os.path.dirname(__file__), 'professions')),
-        autoescape = select_autoescape(['yml'])
+        autoescape = select_autoescape(['toml'])
     )
 
     directory = os.path.dirname(__file__)
@@ -59,7 +59,6 @@ class WorldCache(object):
             raise Exception('WorldCache.init: Run configure before init.')
 
         cls.output.setLevel(INFO)
-        cls.output.info(cls.jinja_monsters.globals)
 
         globals = {
             'range': range,
@@ -81,7 +80,7 @@ class WorldCache(object):
         for name in os.listdir(professions_directory):
             base = name.split('.')[0]
             template = cls.jinja_professions.get_template(name)
-            cls.professions[base] = load(template.render(), Loader=Loader)
+            cls.professions[base] = loads(template.render())
 
         path = f'monsters/{cls.country}/{cls.state}/{cls.county}'
         monsters_directory = os.path.join(cls.directory, path)
@@ -89,8 +88,8 @@ class WorldCache(object):
         for name in os.listdir(monsters_directory):
             cls.base = base = name.split('.')[0]
             template = cls.jinja_monsters.get_template(f'{cls.country}/{cls.state}/{cls.county}/{name}')
-            cls.monsters[base] = load(template.render(), Loader=Loader)
-            for m in cls.monsters[base]:
+            cls.monsters[base] = loads(template.render())
+            for m in cls.monsters[base]['monsters']:
                 character = Character(m['monster'])
                 character.shard = cls.shard
                 await character.save()
@@ -103,11 +102,11 @@ class WorldCache(object):
 
     @classmethod
     async def close(cls):
-        for data in cls.monsters[cls.base]:
-            cls.output.info('%s %s', cls.shard, data['monster']['world_id'])
+        for m in cls.monsters[cls.base]['monsters']:
             character = await Character.find_one({
                 'shard': cls.shard,
-                'world_id': data['monster']['world_id']
+                'world_id': m['monster']['world_id']
             })
+            cls.output.info(f'{Fore.MAGENTA}Removing {character.id}{Style.RESET_ALL}')
             await character.redis_remove_location()
             await character.delete()

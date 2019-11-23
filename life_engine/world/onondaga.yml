@@ -1,6 +1,6 @@
 ---
 
-  {% for i in range(10) %}
+  {% for i in range(5000) %}
   - deployment: single
     monster:
       world_id: "{{ i }}"
