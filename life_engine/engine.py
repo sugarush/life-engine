@@ -33,6 +33,8 @@ class LifeEngine(object):
 
     @server.listener('before_server_start')
     async def setup(app, loop):
+        WorldCache.init()
+        WorldCache.init_spells()
         LifeEngine.output.setLevel(INFO)
         MongoDB.set_event_loop(loop)
         await Redis.set_event_loop(loop)
@@ -62,7 +64,7 @@ class LifeEngine(object):
 
     @classmethod
     async def iterate(cls):
-        redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=5)
+        redis = await Redis.connect(host='redis://localhost', minsize=1, maxsize=1)
         start = time()
         async for key, _ in redis.izscan('location', match=f'{cls.shard}:*'):
             split = key.split(b':')

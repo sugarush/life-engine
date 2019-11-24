@@ -1,1 +1,7 @@
-title = 'wizard'
+[resistances]
+  fire = 25
+  frost = 25
+  poison = 25
+  shadow = 25
+  magic = 50
+  holy = 15

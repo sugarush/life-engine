@@ -16,8 +16,8 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 
 def coordinates(longitude, latitude, spread=0):
-    longitude += spread * random()
-    latitude += spread * random()
+    longitude += spread * (random() - 0.5)
+    latitude += spread * (random() - 0.5)
     return f'[ {longitude}, {latitude} ]'
 
 
@@ -29,12 +29,19 @@ class WorldCache(object):
         loader = FileSystemLoader(os.path.join(os.path.dirname(__file__), 'monsters')),
         autoescape = select_autoescape(['toml'])
     )
+
     jinja_professions = Environment(
         loader = FileSystemLoader(os.path.join(os.path.dirname(__file__), 'professions')),
         autoescape = select_autoescape(['toml'])
     )
+
     jinja_races = Environment(
         loader = FileSystemLoader(os.path.join(os.path.dirname(__file__), 'races')),
+        autoescape = select_autoescape(['toml'])
+    )
+
+    jinja_spells = Environment(
+        loader = FileSystemLoader(os.path.join(os.path.dirname(__file__), 'spells')),
         autoescape = select_autoescape(['toml'])
     )
 
@@ -49,6 +56,7 @@ class WorldCache(object):
     monsters = { }
     professions = { }
     races = { }
+    spells = { }
 
     @classmethod
     def set_shard(cls, name):
@@ -102,6 +110,16 @@ class WorldCache(object):
             base = name.split('.')[0]
             template = cls.jinja_races.get_template(name)
             cls.races[base] = loads(template.render())
+
+    @classmethod
+    def init_spells(cls):
+
+        spells_directory = os.path.join(cls.directory, 'spells')
+
+        for name in os.listdir(spells_directory):
+            base = name.split('.')[0]
+            template = cls.jinja_spells.get_template(name)
+            cls.spells[base] = loads(template.render())
 
     @classmethod
     async def inint_monsters(cls):

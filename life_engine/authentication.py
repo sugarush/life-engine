@@ -63,7 +63,7 @@ class Authentication(WebToken):
             }
         }
 
-        if attributes.get('character'):
+        if attributes and attributes.get('character'):
 
             characters = [ character async for character in Character.find({
                 'profile': profile.id

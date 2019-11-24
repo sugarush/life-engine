@@ -41,6 +41,7 @@ if args.command == 'api':
     WC.init()
     WC.init_professions()
     WC.init_races()
+    WC.init_spells()
 
     from logging import getLogger, basicConfig, INFO
     basicConfig(format='%(asctime)-15s %(name)s %(message)s')

@@ -13,13 +13,15 @@ export default {
     ],
     link: [
       { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-      { rel: 'stylesheet', type: 'text/css', href: 'https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.2/dist/semantic.min.css'}
+      { rel: 'stylesheet', type: 'text/css', href: 'https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.2/dist/semantic.min.css' },
+      { rel: 'stylesheet', type: 'text/css', href: 'https://api.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.css' }
     ],
     script: [
       { src: '/jwt-decode.min.js', type: 'text/javascript' },
       { src: '/lodash.min.js', type: 'text/javascript' },
       { src: 'https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js', type: 'text/javascript' },
-      { src: 'https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.2/dist/semantic.min.js', type: 'text/javascript'}
+      { src: 'https://cdn.jsdelivr.net/npm/fomantic-ui@2.8.2/dist/semantic.min.js', type: 'text/javascript'},
+      { src: 'https://api.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.js', type: 'text/javascript' }
     ]
   },
   /*

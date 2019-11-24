@@ -61,13 +61,21 @@ async def create(request, token):
         )
         return jsonapi({ "errors": [ error.serialize() ] }, status=403)
 
+    if not len(character.name.first) > 5:
+        error =  Error(
+            title = 'Create Character Error',
+            detail = 'Invalid first name.',
+            status = 403
+        )
+        return jsonapi({ "errors": [ error.serialize() ] }, status=403)
+
     character.level = {
         'current': 1,
         'experience': 0,
         'next': 1000
     }
     character.attributes = WorldCache.races[character.race]['attributes']
-    character.health = (await character.stats)['max_health']
+    character.health = 0
     character.state = {
         'target': None,
         'hostile': False,

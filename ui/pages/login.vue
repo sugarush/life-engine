@@ -39,7 +39,11 @@ export default {
           }
         }
       });
-      if(!WebToken.errored) {
+      if(WebToken.errored) {
+        for(let error of WebToken.errors) {
+          this.$store.commit('message/add', error);
+        }
+      } else {
         this.$router.push({ name: 'character' });
       }
     }
