@@ -27,6 +27,7 @@ args = parser.parse_args()
 
 from sugar_api import WebToken
 
+
 WebToken.set_secret('secret')
 
 if args.command == 'api':
@@ -35,6 +36,11 @@ if args.command == 'api':
 
     import handlers
     from api import server
+    from world.cache import WorldCache as WC
+
+    WC.init()
+    WC.init_professions()
+    WC.init_races()
 
     from logging import getLogger, basicConfig, INFO
     basicConfig(format='%(asctime)-15s %(name)s %(message)s')
@@ -50,7 +56,6 @@ elif args.command == 'engine':
 
     import websocket
     from engine import LifeEngine as LE
-    from world.cache import WorldCache as WC
 
     LE.configure(args)
 

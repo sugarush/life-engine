@@ -8,6 +8,8 @@ basicConfig(format='%(asctime)-15s %(name)s %(message)s')
 from colorama import Fore, Back, Style
 from toml import loads
 
+from sugar_document import Document
+
 from model.character import Character
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -31,6 +33,10 @@ class WorldCache(object):
         loader = FileSystemLoader(os.path.join(os.path.dirname(__file__), 'professions')),
         autoescape = select_autoescape(['toml'])
     )
+    jinja_races = Environment(
+        loader = FileSystemLoader(os.path.join(os.path.dirname(__file__), 'races')),
+        autoescape = select_autoescape(['toml'])
+    )
 
     directory = os.path.dirname(__file__)
 
@@ -42,6 +48,7 @@ class WorldCache(object):
 
     monsters = { }
     professions = { }
+    races = { }
 
     @classmethod
     def set_shard(cls, name):
@@ -56,9 +63,6 @@ class WorldCache(object):
 
     @classmethod
     def init(cls):
-        if not cls.country:
-            raise Exception('WorldCache.init: Run configure before init.')
-
         cls.output.setLevel(INFO)
 
         globals = {
@@ -76,6 +80,9 @@ class WorldCache(object):
         cls.jinja_professions.globals = globals
         cls.jinja_professions.filters = filters
 
+        cls.jinja_races.globals = globals
+        cls.jinja_races.filters = filters
+
     @classmethod
     def init_professions(cls):
 
@@ -87,7 +94,20 @@ class WorldCache(object):
             cls.professions[base] = loads(template.render())
 
     @classmethod
+    def init_races(cls):
+
+        races_directory = os.path.join(cls.directory, 'races')
+
+        for name in os.listdir(races_directory):
+            base = name.split('.')[0]
+            template = cls.jinja_races.get_template(name)
+            cls.races[base] = loads(template.render())
+
+    @classmethod
     async def inint_monsters(cls):
+
+        if not cls.country:
+            raise Exception('WorldCache.init_monsters: Run configure before init_monsters.')
 
         path = f'monsters/{cls.country}/{cls.state}/{cls.county}'
         monsters_directory = os.path.join(cls.directory, path)

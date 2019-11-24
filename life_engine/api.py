@@ -2,6 +2,7 @@ from sanic import Sanic
 from sugar_api import CORS, Redis
 from sugar_odm import MongoDB
 
+from world.cache import WorldCache
 
 CORS.set_origins('*')
 

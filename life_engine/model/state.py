@@ -6,3 +6,4 @@ class State(Model):
     hostile = Field(type=bool)
     retaliate = Field(type=bool)
     dead = Field(type=int)
+    casting = Field(type=bool)

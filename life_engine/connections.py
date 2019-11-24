@@ -40,11 +40,11 @@ class Connections(object):
 
     @classmethod
     def socket_by_character_id(cls, id):
-        return cls.characters[id]
+        return cls.characters.get(id)
 
     @classmethod
     def character_id_by_socket(cls, socket):
-        return cls.sockets[socket]
+        return cls.sockets.get(socket)
 
     @classmethod
     async def set_socket_by_character_id(cls, socket, id):

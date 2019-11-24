@@ -6,5 +6,5 @@ class Attributes(Model):
     dexterity = Field(type=int)
     constitution = Field(type=int)
     intelligence = Field(type=int)
-    wisdow = Field(type=int)
+    wisdom = Field(type=int)
     charisma = Field(type=int)

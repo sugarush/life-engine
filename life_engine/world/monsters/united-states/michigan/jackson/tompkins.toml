@@ -5,6 +5,7 @@ shard = "tompkins"
   deployment = "single"
 
   [monsters.monster]
+    race = 'ogre'
     health = 1000
 
   [monsters.monster.location]
@@ -30,7 +31,4 @@ shard = "tompkins"
     dexterity = 10
     constitution = 10
     intelligence = 10
-
-  [monsters.monster.resistances]
-    fire = 10
 {% endfor %}
