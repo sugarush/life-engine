@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="!characters.length">
+    <div v-if="!characters.models.length">
       <div class="ui centered grid">
         <div class="row">
           <h1>New Player?</h1>
@@ -42,6 +42,12 @@ export default {
     await this.characters.find({
       query: { profile: WebToken.payload.data.id }
     });
+    console.log(this.characters.models);
+    if(this.characters.errored) {
+      for(let error of this.characters.errors) {
+        this.$store.commit("message/add", error);
+      }
+    }
   }
 }
 </script>

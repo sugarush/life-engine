@@ -29,7 +29,7 @@ export default {
         container: 'map',
         style: 'mapbox://styles/mapbox/satellite-streets-v10?optimize=true',
         center: [ -84.54194682144171, 42.41184078897055 ],
-        zoom: 17
+        zoom: 15
       });
       map.on('click', (event) => {
         this.click = event.lngLat;
